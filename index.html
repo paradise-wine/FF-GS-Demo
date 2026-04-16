@@ -17,9 +17,15 @@
             position: relative; width: 100%; height: 600px; 
             background: #000; border-radius: 12px; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 40px 0;
+            touch-action: none; /* 防止移动端拖拽冲突 */
         }
-        canvas { width: 100%; height: 100%; display: block; }
-        .loading-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; z-index: 10; }
+        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+        .loading-overlay { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); color: white; 
+            z-index: 10; text-align: center; pointer-events: none;
+        }
 
         .section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
         h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #00529b; }
@@ -44,12 +50,12 @@
     </div>
 
     <div id="viewer-container">
-        <div id="loading" class="loading-overlay">正在从 Hugging Face 加载 3D 场景 (可能需要几秒)...</div>
+        <div id="loading" class="loading-overlay">正在从 Hugging Face 加载 3D 场景...<br><small>首次加载较大，请耐心等待</small></div>
     </div>
 
     <div class="section">
         <h2>算法对比 & 结果</h2>
-        <p>这里可以继续添加你的实验对比数据或视频。</p>
+        <p>这里可以继续添加你的实验对比数据、表格或视频链接。</p>
     </div>
 
     <div class="footer">
@@ -65,58 +71,79 @@
         }
     }
     </script>
+
     <script type="module">
         import * as THREE from 'three';
         import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
         // --- 配置区 ---
-        // 【关键】把下面的链接替换成你从 Hugging Face 复制的 "resolve" 直链
         const HF_MODEL_URL = 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud.spz';
         // --------------
 
         async function main() {
             const container = document.getElementById('viewer-container');
             
-            // 1. 初始化 Three.js 环境
+            // 1. 初始化场景
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(-2, 1, 5); // 初始相机位置
             
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            // 调大远裁剪面到 5000，防止大场景 ScanNet++ 被截断
+            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
+            
+            // 重要：ScanNet++/COLMAP 坐标系通常是 Z 轴向上
+            camera.up.set(0, 0, 1); 
+            // 初始相机位置：从侧上方俯瞰
+            camera.position.set(8, 8, 8); 
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
             // 2. 初始化 Spark 渲染引擎
             const spark = new SparkRenderer({ renderer });
             scene.add(spark);
 
-            // 3. 加载 HF 上的模型
+            // 3. 添加轨道控制器（实现交互）
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // 增加滑动感
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true; // 允许右键平移
+
+            // 4. 加载模型
             try {
+                // 如果模型加载出来还是反的，可以在 SplatMesh 创建后对其进行旋转
                 const splat = new SplatMesh({ url: HF_MODEL_URL });
+                
+                // 如果是标准 COLMAP，有时需要绕 X 轴旋转 -90 度来适配 Three.js
+                // splat.rotation.x = -Math.PI / 2; 
+                
                 scene.add(splat);
                 
-                // 监听加载完成隐藏 Loading
-                // Spark 的加载是异步的，通常模型出现即代表成功
+                // 监听加载：Spark 暂无原生 Promise 回调，我们通过简单延时或状态检测来隐藏 loading
                 setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
-                }, 2000);
+                    // 让控制器聚焦在模型中心（如果模型坐标已归一化）
+                    controls.target.set(0, 0, 0); 
+                }, 3500);
 
             } catch (err) {
-                console.error("加载模型失败:", err);
-                document.getElementById('loading').innerText = "加载失败，请检查 HF 链接";
+                console.error("加载失败:", err);
+                document.getElementById('loading').innerText = "加载失败，请检查 HF 链接或 CORS";
             }
 
-            // 4. 渲染循环
+            // 5. 渲染循环
             function animate() {
                 requestAnimationFrame(animate);
-                // 简单的自动旋转预览（可选）
-                // scene.rotation.y += 0.005; 
+                
+                // 必须在循环中更新 controls
+                controls.update(); 
+                
                 renderer.render(scene, camera);
             }
             animate();
 
-            // 窗口缩放适配
+            // 响应式调整
             window.addEventListener('resize', () => {
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
@@ -124,7 +151,7 @@
             });
         }
 
-        main();
+        main().catch(console.error);
     </script>
 </body>
 </html>
