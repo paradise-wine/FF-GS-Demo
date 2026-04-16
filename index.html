@@ -7,52 +7,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root { --hit-blue: #00529b; --bg-gray: #f8f9fa; }
-        body { font-family: 'Roboto', sans-serif; margin: 0; background: var(--bg-gray); color: #333; }
+        body { font-family: 'Roboto', sans-serif; margin: 0; background: var(--bg-gray); color: #333; line-height: 1.6; }
         .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
-        
+
         header { text-align: center; margin-bottom: 50px; }
         h1 { font-family: 'Noto Serif SC', serif; font-size: 2.5em; color: #1a1a1a; margin-bottom: 10px; }
-        .authors { font-size: 1.1em; color: #666; font-weight: 300; }
-        .affiliation { font-style: italic; color: var(--hit-blue); margin-top: 5px; font-weight: 500; }
+        .affiliation { font-style: italic; color: var(--hit-blue); margin-top: 5px; font-weight: 500; font-size: 1.1em; }
 
-        /* 展示区布局 */
-        .viewer-layout { 
-            display: grid; grid-template-columns: 220px 1fr; gap: 20px;
-            background: #fff; padding: 15px; border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 20px 0 40px 0;
+        .section { background: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .section h2 { color: var(--hit-blue); margin-top: 0; border-left: 4px solid var(--hit-blue); padding-left: 15px; font-size: 1.5em; }
+
+        /* 说明文字样式 */
+        .voxel-desc { font-size: 0.95em; color: #666; background: #f0f7ff; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; }
+
+        /* 全局 3D 展示区布局 */
+        .viewer-layout {
+            display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-top: 20px;
         }
-
-        /* 侧边栏按钮 */
-        .sidebar { display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #eee; padding-right: 15px; }
-        .sidebar-title { font-weight: 700; font-size: 0.85em; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .sidebar { display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #eee; padding-right: 15px; }
         .scene-btn {
-            padding: 12px 15px; border: none; border-radius: 8px; background: #f0f2f5;
-            cursor: pointer; text-align: left; transition: all 0.2s ease; font-weight: 500; font-size: 0.9em;
+            padding: 12px; border: none; border-radius: 6px; background: #f0f2f5;
+            cursor: pointer; text-align: left; transition: 0.2s; font-weight: 500; font-size: 0.9em;
         }
-        .scene-btn:hover { background: #e4e6e9; }
-        .scene-btn.active { background: var(--hit-blue); color: white; box-shadow: 0 4px 10px rgba(0,82,155,0.25); }
+        .scene-btn.active { background: var(--hit-blue); color: white; }
 
-        /* 渲染容器 */
         #viewer-container {
-            position: relative; width: 100%; height: 600px;
-            background: #000; border-radius: 10px; overflow: hidden;
+            position: relative; width: 100%; height: 500px;
+            background: #000; border-radius: 12px; overflow: hidden;
         }
-        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
 
-        /* 加载遮罩 */
+        /* 局部视频对比布局 */
+        .video-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;
+        }
+        .video-item { width: 100%; }
+        .video-item video {
+            width: 100%; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            background: #000;
+        }
+        .video-label { text-align: center; margin-top: 10px; font-weight: 700; color: #444; font-size: 0.9em; }
+
         .loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: white; z-index: 100;
-            backdrop-filter: blur(8px); pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            background: rgba(0,0,0,0.8); display: flex; justify-content: center;
+            align-items: center; color: white; z-index: 100; opacity: 0; transition: 0.3s; pointer-events: none;
         }
         .loading-overlay.visible { opacity: 1; pointer-events: all; }
 
-        .section { background: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; line-height: 1.8; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .section h2 { color: var(--hit-blue); margin-top: 0; border-left: 4px solid var(--hit-blue); padding-left: 15px; font-size: 1.5em; }
-        .voxel-note { font-size: 0.9em; color: #777; margin-top: -10px; margin-bottom: 15px; }
-
         .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.85em; }
+        @media (max-width: 768px) { .viewer-layout, .video-grid { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid #eee; padding-bottom: 15px; } }
     </style>
 </head>
 <body>
@@ -64,35 +67,47 @@
     </header>
 
     <div class="section">
-        <h2>Global Scene Reconstruction (Replica)</h2>
-        <p class="voxel-note">注：为兼顾实时渲染效率，全局场景体素大小设为 0.01m。</p>
+        <h2>Zero-shot Generalization (Replica)</h2>
+        <p>模型仅在 <strong>ScanNet++</strong> 上训练。此处展示其在 <strong>Replica</strong> 上的零样本推理结果，验证算法的跨数据集泛化能力。</p>
+
+        <div class="voxel-desc">
+            <strong>全局场景展示：</strong> 采用 <strong>0.01m</strong> 体素设置，避免网页过于卡顿（牺牲部分质量）。
+        </div>
+
         <div class="viewer-layout">
             <div class="sidebar">
-                <div class="sidebar-title">全局场景选择</div>
-                <button class="scene-btn active" onclick="switchScene('office0', this)">Scene 1</button>
-                <button class="scene-btn" onclick="switchScene('office2', this)">Scene 2</button>
-                <button class="scene-btn" onclick="switchScene('office3', this)">Scene 3</button>
-                <button class="scene-btn" onclick="switchScene('room2', this)">Scene 4</button>
+                <button class="scene-btn active" onclick="switchScene('office0', this)">Global Scene 1</button>
+                <button class="scene-btn" onclick="switchScene('office2', this)">Global Scene 2</button>
+                <button class="scene-btn" onclick="switchScene('office3', this)">Global Scene 3</button>
+                <button class="scene-btn" onclick="switchScene('room2', this)">Global Scene 4</button>
             </div>
-
             <div id="viewer-container">
-                <div id="loading" class="loading-overlay">
-                    <div style="font-size: 1.2em; margin-bottom: 10px;">正在加载场景数据...</div>
-                </div>
+                <div id="loading" class="loading-overlay">加载中...</div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>Local Fine-grained Details</h2>
-        <p class="voxel-note">注：局部细节重建采用更精细的 0.005m 体素，以捕捉高频纹理信息。</p>
-        <div class="viewer-layout">
-            <div class="sidebar">
-                <div class="sidebar-title">细节对比</div>
-                <button class="scene-btn" onclick="switchScene('detail1', this)">Detail 1 (0.005m)</button>
-                <button class="scene-btn" onclick="switchScene('detail2', this)">Detail 2 (0.005m)</button>
+        <h2>Fine-grained Reconstruction Details</h2>
+        <div class="voxel-desc">
+            <strong>局部细节对比：</strong> 采用更精细的 <strong>0.005m</strong> 体素设置。
+        </div>
+
+        <div class="video-grid">
+            <div class="video-item">
+                <video autoplay loop muted playsinline controls>
+                    <source src="results/replica/video1_1.mp4" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+                <div class="video-label">Detail Analysis A (Voxel: 0.005m)</div>
             </div>
-            <p style="padding: 0 10px; font-size: 0.85em; color: #888;">点击上方按钮在主查看器中查看高精度局部结果。</p>
+            <div class="video-item">
+                <video autoplay loop muted playsinline controls>
+                    <source src="results/replica/video2_1.mp4" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+                <div class="video-label">Detail Analysis B (Voxel: 0.005m)</div>
+            </div>
         </div>
     </div>
 
@@ -116,16 +131,11 @@
     import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-    // 资源路径配置
-    const assets = {
-        // 全局场景 (Hugging Face)
+    const scenes = {
         'office0': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office0.spz',
         'office2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office2.spz',
         'office3': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office3.spz',
-        'room2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_room2.spz',
-        // 局部细节 (GitHub 本地路径)
-        'detail1': 'results/replica/point_cloud_detail1.spz',
-        'detail2': 'results/replica/point_cloud_detail2.spz'
+        'room2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_room2.spz'
     };
 
     let renderer, scene, camera, controls, spark, currentSplat;
@@ -135,7 +145,7 @@
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
         camera.up.set(0, 0, 1);
-        camera.position.set(5, 5, 5);
+        camera.position.set(7, 7, 7);
 
         renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -148,16 +158,13 @@
         controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // 默认加载第一个
         switchScene('office0', document.querySelector('.scene-btn.active'));
-
         animate();
     }
 
     window.switchScene = async (id, btn) => {
         document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
         const loading = document.getElementById('loading');
         loading.classList.add('visible');
 
@@ -169,25 +176,14 @@
 
         setTimeout(async () => {
             try {
-                currentSplat = new SplatMesh({
-                    url: assets[id],
-                    sphericalHarmonicsDegree: 0
-                });
+                currentSplat = new SplatMesh({ url: scenes[id], sphericalHarmonicsDegree: 0 });
                 scene.add(currentSplat);
-
                 setTimeout(() => {
                     loading.classList.remove('visible');
                     controls.target.set(0, 0, 0);
-                    // 局部细节场景较小，缩放一下相机
-                    if (id.includes('detail')) {
-                        camera.position.set(2, 2, 2);
-                    } else {
-                        camera.position.set(7, 7, 7);
-                    }
                 }, 1500);
             } catch (e) {
-                console.error("加载失败:", e);
-                loading.innerText = "数据加载失败，请检查文件路径";
+                loading.innerText = "加载失败";
             }
         }, 300);
     };
@@ -197,13 +193,6 @@
         controls.update();
         renderer.render(scene, camera);
     }
-
-    window.addEventListener('resize', () => {
-        const container = document.getElementById('viewer-container');
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-    });
 
     init();
 </script>
