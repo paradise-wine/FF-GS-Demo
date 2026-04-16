@@ -17,10 +17,10 @@
         .section { background: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .section h2 { color: var(--hit-blue); margin-top: 0; border-left: 4px solid var(--hit-blue); padding-left: 15px; font-size: 1.5em; }
 
-        /* 说明文字样式 */
-        .voxel-desc { font-size: 0.95em; color: #666; background: #f0f7ff; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; }
+        /* 这里的 voxel-note 已经更新了描述 */
+        .voxel-note { font-size: 0.95em; color: #666; background: #f0f7ff; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; }
 
-        /* 全局 3D 展示区布局 */
+        /* 全局展示区布局 */
         .viewer-layout {
             display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-top: 20px;
         }
@@ -35,27 +35,35 @@
             position: relative; width: 100%; height: 500px;
             background: #000; border-radius: 12px; overflow: hidden;
         }
+        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
 
-        /* 局部视频对比布局 */
+        /* 局部视频展示区（修改为居中小尺寸） */
         .video-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;
+            display: flex;
+            justify-content: center; /* 居中 */
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
         }
-        .video-item { width: 100%; }
+        .video-item {
+            width: 280px; /* 设置为 256px 左右的宽度 */
+        }
         .video-item video {
-            width: 100%; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            background: #000;
+            width: 100%; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background: #000; display: block;
         }
-        .video-label { text-align: center; margin-top: 10px; font-weight: 700; color: #444; font-size: 0.9em; }
+        .video-label { text-align: center; margin-top: 10px; font-weight: 700; color: #555; font-size: 0.85em; }
 
         .loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; justify-content: center;
-            align-items: center; color: white; z-index: 100; opacity: 0; transition: 0.3s; pointer-events: none;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 100;
+            backdrop-filter: blur(8px); pointer-events: none; opacity: 0; transition: opacity 0.3s;
         }
         .loading-overlay.visible { opacity: 1; pointer-events: all; }
 
         .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.85em; }
-        @media (max-width: 768px) { .viewer-layout, .video-grid { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid #eee; padding-bottom: 15px; } }
+        @media (max-width: 768px) { .viewer-layout { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid #eee; padding-bottom: 15px; } }
     </style>
 </head>
 <body>
@@ -67,20 +75,19 @@
     </header>
 
     <div class="section">
-        <h2>Zero-shot Generalization (Replica)</h2>
-        <p>模型仅在 <strong>ScanNet++</strong> 上训练。此处展示其在 <strong>Replica</strong> 上的零样本推理结果，验证算法的跨数据集泛化能力。</p>
-
-        <div class="voxel-desc">
-            <strong>全局场景展示：</strong> 采用 <strong>0.01m</strong> 体素设置，避免网页过于卡顿（牺牲部分质量）。
-        </div>
-
+        <h2>Global Scene Reconstruction (Replica)</h2>
+        <p class="voxel-note">
+            <strong>Voxel Size: 0.01m</strong> — 为了优化大规模场景的推理效率与渲染性能，全局重建采用了较大的体素设置，侧重于整体一致性。
+        </p>
         <div class="viewer-layout">
             <div class="sidebar">
-                <button class="scene-btn active" onclick="switchScene('office0', this)">Global Scene 1</button>
-                <button class="scene-btn" onclick="switchScene('office2', this)">Global Scene 2</button>
-                <button class="scene-btn" onclick="switchScene('office3', this)">Global Scene 3</button>
-                <button class="scene-btn" onclick="switchScene('room2', this)">Global Scene 4</button>
+                <div style="font-weight: 700; font-size: 0.8em; color: #999; margin-bottom: 8px;">场景选择</div>
+                <button class="scene-btn active" onclick="switchScene('office0', this)">Scene 1</button>
+                <button class="scene-btn" onclick="switchScene('office2', this)">Scene 2</button>
+                <button class="scene-btn" onclick="switchScene('office3', this)">Scene 3</button>
+                <button class="scene-btn" onclick="switchScene('room2', this)">Scene 4</button>
             </div>
+
             <div id="viewer-container">
                 <div id="loading" class="loading-overlay">加载中...</div>
             </div>
@@ -89,24 +96,22 @@
 
     <div class="section">
         <h2>Fine-grained Reconstruction Details</h2>
-        <div class="voxel-desc">
-            <strong>局部细节对比：</strong> 采用更精细的 <strong>0.005m</strong> 体素设置。
-        </div>
+        <p class="voxel-note">
+            <strong>Voxel Size: 0.005m</strong> — 局部细节重建采用了更精细的体素，以捕捉高频纹理与复杂的几何边界，展现算法的重建上限。
+        </p>
 
         <div class="video-grid">
             <div class="video-item">
                 <video autoplay loop muted playsinline controls>
-                    <source src="results/replica/video1_1.mp4" type="video/mp4">
-                    您的浏览器不支持视频播放。
+                    <source src="results/replica/video_1.mp4" type="video/mp4">
                 </video>
-                <div class="video-label">Detail Analysis A (Voxel: 0.005m)</div>
+                <div class="video-label">Detail Analysis A (0.005m)</div>
             </div>
             <div class="video-item">
                 <video autoplay loop muted playsinline controls>
-                    <source src="results/replica/video2_1.mp4" type="video/mp4">
-                    您的浏览器不支持视频播放。
+                    <source src="results/replica/video_2.mp4" type="video/mp4">
                 </video>
-                <div class="video-label">Detail Analysis B (Voxel: 0.005m)</div>
+                <div class="video-label">Detail Analysis B (0.005m)</div>
             </div>
         </div>
     </div>
@@ -145,7 +150,8 @@
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
         camera.up.set(0, 0, 1);
-        camera.position.set(5, 5, 5);
+        // --- 修改这里调整初始大小 ---
+        camera.position.set(4, 4, 4);
 
         renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -181,6 +187,8 @@
                 setTimeout(() => {
                     loading.classList.remove('visible');
                     controls.target.set(0, 0, 0);
+                    // --- 切换场景时也保持放大视角 ---
+                    camera.position.set(4, 4, 4);
                 }, 1500);
             } catch (e) {
                 loading.innerText = "加载失败";
@@ -193,6 +201,13 @@
         controls.update();
         renderer.render(scene, camera);
     }
+
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('viewer-container');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
 
     init();
 </script>
