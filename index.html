@@ -140,11 +140,12 @@
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
     const scenes = {
-        'office0': 'https://github.com/paradise-wine/FF-GS-Demo/blob/main/results/replica/point_cloud_office0.spz',
-        'office2': 'https://github.com/paradise-wine/FF-GS-Demo/blob/main/results/replica/point_cloud_office2.spz',
-        'office3': 'https://github.com/paradise-wine/FF-GS-Demo/blob/main/results/replica/point_cloud_office3.spz',
-        'room2': 'https://github.com/paradise-wine/FF-GS-Demo/blob/main/results/replica/point_cloud_room2.spz'
-    };
+            // 直接使用相对路径，指向你仓库里的 results/replica 文件夹
+            'office0': 'results/replica/point_cloud_office0.spz',
+            'office2': 'results/replica/point_cloud_office2.spz',
+            'office3': 'results/replica/point_cloud_office3.spz',
+            'room2': 'results/replica/point_cloud_room2.spz'
+        };
 
     let renderer, scene, camera, controls, spark, currentSplat;
 
