@@ -77,7 +77,7 @@
     <div class="section">
         <h2>全局重建 (Replica)</h2>
         <p class="voxel-note">
-            <strong>Voxel Size: 0.01m</strong> — 为了优化大规模场景的推理效率与渲染性能，全局重建采用了较大的体素设置，侧重于整体一致性。
+            <strong>Voxel Size: 0.01m</strong> — 增大体素，避免网页过于卡顿，但牺牲了部分重建质量。
         </p>
         <div class="viewer-layout">
             <div class="sidebar">
@@ -97,7 +97,7 @@
     <div class="section">
         <h2>局部重建</h2>
         <p class="voxel-note">
-            <strong>Voxel Size: 0.005m</strong> — 局部细节重建采用了更精细的体素，以捕捉高频纹理与复杂的几何边界，展现算法的重建上限。
+            <strong>Voxel Size: 0.005m</strong>
         </p>
 
         <div class="video-grid">
