@@ -75,9 +75,12 @@
     </header>
 
     <div class="section">
-        <h2>全局重建 (Replica)</h2>
+        <h2>Zero-shot Generalization (跨数据集全局重建)</h2>
+        <p style="margin-bottom: 15px; color: #444;">
+            本模型<strong>仅在 ScanNet++</strong> 真实场景数据集上进行预训练，此处展示的是在 <strong>Replica</strong> 数据集上的<strong>零样本（Zero-shot）跨数据集推理</strong>结果。实验证明，该前馈架构对未见过的室内结构具备强大的泛化能力。
+        </p>
         <p class="voxel-note">
-            <strong>Voxel Size: 0.01m</strong> — 增大体素，避免网页过于卡顿，但牺牲了部分重建质量。
+            <strong>Voxel Size: 0.01m</strong> — 为保证网页端实时交互的流畅度，全局模型适当放宽了体素尺寸，侧重于展现大尺度场景的整体几何一致性。
         </p>
         <div class="viewer-layout">
             <div class="sidebar">
@@ -95,9 +98,9 @@
     </div>
 
     <div class="section">
-        <h2>局部重建</h2>
+        <h2>Fine-grained Details (零样本局部细节展示)</h2>
         <p class="voxel-note">
-            <strong>Voxel Size: 0.005m</strong>
+            <strong>Voxel Size: 0.005m</strong> — 局部重建采用更高精度的体素设置。
         </p>
 
         <div class="video-grid">
