@@ -71,10 +71,10 @@
     <div class="viewer-layout">
         <div class="sidebar">
             <div class="sidebar-title">场景切换 </div>
-            <button class="scene-btn active" onclick="switchScene('office0', this)">Office Scene 0</button>
-            <button class="scene-btn" onclick="switchScene('office2', this)">Office Scene 2</button>
-            <button class="scene-btn" onclick="switchScene('office3', this)">Office Scene 3</button>
-            <button class="scene-btn" onclick="switchScene('room2', this)">Bedroom Scene 2</button>
+            <button class="scene-btn active" onclick="switchScene('office0', this)">Scene 1</button>
+            <button class="scene-btn" onclick="switchScene('office2', this)">Scene 2</button>
+            <button class="scene-btn" onclick="switchScene('office3', this)">Scene 3</button>
+            <button class="scene-btn" onclick="switchScene('room2', this)">Scene 4</button>
         </div>
         
         <div id="viewer-container">
@@ -161,7 +161,7 @@
             try {
                 currentSplat = new SplatMesh({ 
                     url: scenes[id],
-                    sphericalHarmonicsDegree: 0 // 性能优化：降低球谐阶数
+                    sphericalHarmonicsDegree: 1 // 性能优化：降低球谐阶数
                 });
                 scene.add(currentSplat);
                 
