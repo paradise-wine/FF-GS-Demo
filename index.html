@@ -95,9 +95,13 @@
             // 初始相机位置：从侧上方俯瞰
             camera.position.set(8, 8, 8); 
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            const renderer = new THREE.WebGLRenderer({ 
+                antialias: false, // 关闭抗锯齿，能省出大量显卡资源
+                alpha: true,
+                powerPreference: "high-performance" // 强制提醒浏览器使用独立显卡
+            });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(1); // 【最关键】强制分辨率为1倍，不使用高清缩放
             container.appendChild(renderer.domElement);
 
             // 2. 初始化 Spark 渲染引擎
@@ -113,7 +117,10 @@
             // 4. 加载模型
             try {
                 // 如果模型加载出来还是反的，可以在 SplatMesh 创建后对其进行旋转
-                const splat = new SplatMesh({ url: HF_MODEL_URL });
+                const splat = new SplatMesh({ 
+                    url: HF_MODEL_URL,
+                    sphericalHarmonicsDegree: 1 // 【关键】强制使用最简单的色彩计算，大幅提升渲染帧率
+                });
                 
                 // 如果是标准 COLMAP，有时需要绕 X 轴旋转 -90 度来适配 Three.js
                 // splat.rotation.x = -Math.PI / 2; 
