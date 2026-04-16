@@ -19,7 +19,7 @@
         .viewer-layout { 
             display: grid; grid-template-columns: 220px 1fr; gap: 20px;
             background: #fff; padding: 15px; border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 20px 0 40px 0;
         }
 
         /* 侧边栏按钮 */
@@ -33,14 +33,14 @@
         .scene-btn.active { background: var(--hit-blue); color: white; box-shadow: 0 4px 10px rgba(0,82,155,0.25); }
 
         /* 渲染容器 */
-        #viewer-container { 
-            position: relative; width: 100%; height: 600px; 
-            background: #000; border-radius: 10px; overflow: hidden; 
+        #viewer-container {
+            position: relative; width: 100%; height: 600px;
+            background: #000; border-radius: 10px; overflow: hidden;
         }
         canvas { width: 100%; height: 100%; display: block; cursor: grab; }
-        
+
         /* 加载遮罩 */
-        .loading-overlay { 
+        .loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
             justify-content: center; align-items: center; color: white; z-index: 100;
@@ -50,6 +50,7 @@
 
         .section { background: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; line-height: 1.8; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .section h2 { color: var(--hit-blue); margin-top: 0; border-left: 4px solid var(--hit-blue); padding-left: 15px; font-size: 1.5em; }
+        .voxel-note { font-size: 0.9em; color: #777; margin-top: -10px; margin-bottom: 15px; }
 
         .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.85em; }
     </style>
@@ -59,29 +60,39 @@
 <div class="container">
     <header>
         <h1>FF-GS: Feed-Forward Gaussian Splatting</h1>
-        <!-- <div class="authors">你的姓名 (Your Name)</div> -->
         <div class="affiliation">哈尔滨工业大学 · 电子信息</div>
     </header>
 
     <div class="section">
-        <h2>Zero-shot Generalization on Replica</h2>
-        <p>本项目展示了 <strong>FF-GS</strong> 算法的跨数据集泛化能力。模型仅在 <strong>ScanNet++</strong> 真实场景数据集上进行预训练，并直接在 <strong>Replica</strong> 数据集上进行零样本（Zero-shot）推理。实验结果表明，FF-GS 能够通过单次前馈高效恢复高精度的室内场景几何结构与纹理细节。</p>
+        <h2>Global Scene Reconstruction (Replica)</h2>
+        <p class="voxel-note">注：为兼顾实时渲染效率，全局场景体素大小设为 0.01m。</p>
+        <div class="viewer-layout">
+            <div class="sidebar">
+                <div class="sidebar-title">全局场景选择</div>
+                <button class="scene-btn active" onclick="switchScene('office0', this)">Scene 1</button>
+                <button class="scene-btn" onclick="switchScene('office2', this)">Scene 2</button>
+                <button class="scene-btn" onclick="switchScene('office3', this)">Scene 3</button>
+                <button class="scene-btn" onclick="switchScene('room2', this)">Scene 4</button>
+            </div>
+
+            <div id="viewer-container">
+                <div id="loading" class="loading-overlay">
+                    <div style="font-size: 1.2em; margin-bottom: 10px;">正在加载场景数据...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="viewer-layout">
-        <div class="sidebar">
-            <div class="sidebar-title">场景切换 </div>
-            <button class="scene-btn active" onclick="switchScene('office0', this)">Scene 1</button>
-            <button class="scene-btn" onclick="switchScene('office2', this)">Scene 2</button>
-            <button class="scene-btn" onclick="switchScene('office3', this)">Scene 3</button>
-            <button class="scene-btn" onclick="switchScene('room2', this)">Scene 4</button>
-        </div>
-        
-        <div id="viewer-container">
-            <div id="loading" class="loading-overlay">
-                <div style="font-size: 1.2em; margin-bottom: 10px;">正在加载场景数据...</div>
-                <div style="font-size: 0.8em; color: #888;">正在建立从 Hugging Face 的连接</div>
+    <div class="section">
+        <h2>Local Fine-grained Details</h2>
+        <p class="voxel-note">注：局部细节重建采用更精细的 0.005m 体素，以捕捉高频纹理信息。</p>
+        <div class="viewer-layout">
+            <div class="sidebar">
+                <div class="sidebar-title">细节对比</div>
+                <button class="scene-btn" onclick="switchScene('detail1', this)">Detail 1 (0.005m)</button>
+                <button class="scene-btn" onclick="switchScene('detail2', this)">Detail 2 (0.005m)</button>
             </div>
+            <p style="padding: 0 10px; font-size: 0.85em; color: #888;">点击上方按钮在主查看器中查看高精度局部结果。</p>
         </div>
     </div>
 
@@ -105,26 +116,30 @@
     import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-    const scenes = {
+    // 资源路径配置
+    const assets = {
+        // 全局场景 (Hugging Face)
         'office0': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office0.spz',
         'office2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office2.spz',
         'office3': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office3.spz',
-        'room2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_room2.spz'
+        'room2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_room2.spz',
+        // 局部细节 (GitHub 本地路径)
+        'detail1': 'results/replica/point_cloud_detail1.ply',
+        'detail2': 'results/replica/point_cloud_detail2.ply'
     };
 
     let renderer, scene, camera, controls, spark, currentSplat;
 
     async function init() {
         const container = document.getElementById('viewer-container');
-        
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
-        camera.up.set(0, 0, 1); 
-        camera.position.set(7, 7, 7); 
+        camera.up.set(0, 0, 1);
+        camera.position.set(5, 5, 5);
 
         renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(1); // 性能优化：强制 1 倍像素比
+        renderer.setPixelRatio(1);
         container.appendChild(renderer.domElement);
 
         spark = new SparkRenderer({ renderer });
@@ -133,49 +148,46 @@
         controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // 初始只加载第一个，不预加载其他的
+        // 默认加载第一个
         switchScene('office0', document.querySelector('.scene-btn.active'));
 
         animate();
     }
 
-    // 核心切换逻辑：彻底清理内存再加载新的
     window.switchScene = async (id, btn) => {
-        // 更新按钮样式
         document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
         const loading = document.getElementById('loading');
         loading.classList.add('visible');
 
-        // 1. 彻底移除当前场景中的模型并清理内存
         if (currentSplat) {
             scene.remove(currentSplat);
-            // 尝试释放 GPU 资源
             if (currentSplat.dispose) currentSplat.dispose();
             currentSplat = null;
         }
 
-        // 2. 延迟一下再加载，给浏览器喘息时间
         setTimeout(async () => {
             try {
-                currentSplat = new SplatMesh({ 
-                    url: scenes[id],
-                    sphericalHarmonicsDegree: 1 // 性能优化：降低球谐阶数
+                currentSplat = new SplatMesh({
+                    url: assets[id],
+                    sphericalHarmonicsDegree: 0
                 });
                 scene.add(currentSplat);
-                
-                // 3. 这里的延时是等 Spark 内部解析数据
+
                 setTimeout(() => {
                     loading.classList.remove('visible');
                     controls.target.set(0, 0, 0);
-                    // 视角归位，防止切场景后相机飞了
-                    camera.position.set(7, 7, 7); 
-                }, 2000);
-
+                    // 局部细节场景较小，缩放一下相机
+                    if (id.includes('detail')) {
+                        camera.position.set(2, 2, 2);
+                    } else {
+                        camera.position.set(7, 7, 7);
+                    }
+                }, 1500);
             } catch (e) {
                 console.error("加载失败:", e);
-                loading.innerText = "数据加载失败，请检查网络";
+                loading.innerText = "数据加载失败，请检查文件路径";
             }
         }, 300);
     };
