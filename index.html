@@ -12,16 +12,17 @@
         .authors { font-size: 1.2em; color: #555; }
         .affiliation { font-style: italic; color: #888; margin-top: 5px; }
         
-        /* 核心展示区：3D 渲染窗口 */
+        /* 核心展示区 */
         #viewer-container { 
             position: relative; width: 100%; height: 600px; 
             background: #000; border-radius: 12px; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 40px 0;
         }
-        .loading-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; }
+        canvas { width: 100%; height: 100%; display: block; }
+        .loading-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; z-index: 10; }
 
         .section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #00529b; } /* HIT Blue */
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #00529b; }
         .abstract { font-style: italic; font-size: 1.1em; line-height: 1.8; }
         .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.9em; }
     </style>
@@ -30,7 +31,7 @@
 
     <div class="header">
         <h1>Feed-Forward Gaussian Splatting (FF-GS)</h1>
-        <div class="authors">作者姓名 (Your Name)</div>
+        <div class="authors">你的姓名 (Your Name)</div>
         <div class="affiliation">哈尔滨工业大学 · 电子信息</div>
     </div>
 
@@ -43,43 +44,86 @@
     </div>
 
     <div id="viewer-container">
-        <div id="loading" class="loading-overlay">正在加载 3D 场景...</div>
+        <div id="loading" class="loading-overlay">正在从 Hugging Face 加载 3D 场景 (可能需要几秒)...</div>
     </div>
 
     <div class="section">
         <h2>算法对比 & 结果</h2>
-        <p>这里可以放一些你在 Replica 上训练得到的对比图片或者视频链接。</p>
+        <p>这里可以继续添加你的实验对比数据或视频。</p>
     </div>
 
     <div class="footer">
-        © 2024 Harbin Institute of Technology · 3D Vision Group
+        © 2026 Harbin Institute of Technology · 3D Vision Group
     </div>
 
     <script type="importmap">
     {
         "imports": {
             "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.3.4/dist/gaussian-splats-3d.module.js"
+            "@sparkjsdev/spark": "https://unpkg.com/@sparkjsdev/spark@latest/dist/spark.module.js"
         }
     }
     </script>
     <script type="module">
-        import * as GaussianSplats3D from 'gaussian-splats-3d';
-        
-        const viewer = new GaussianSplats3D.Viewer({
-            'targetElement': document.getElementById('viewer-container'),
-            'cameraUp': [0, -1, 0],
-            'initialCameraPosition': [-1, -2, 5],
-            'initialCameraLookAt': [0, 0, 0],
-            'sphericalHarmonicsDegree': 0 // 简历展示建议设为0，加载更快
-        });
+        import * as THREE from 'three';
+        import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
 
-        // 【关键！】把这里的地址改成你模型文件的真实路径
-        viewer.addSplatScene('path/to/your/result.ksplat', {
-            'showLoadingUI': false
-        }).then(() => {
-            document.getElementById('loading').style.display = 'none';
-        });
+        // --- 配置区 ---
+        // 【关键】把下面的链接替换成你从 Hugging Face 复制的 "resolve" 直链
+        const HF_MODEL_URL = 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud.compressed.ply';
+        // --------------
+
+        async function main() {
+            const container = document.getElementById('viewer-container');
+            
+            // 1. 初始化 Three.js 环境
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(-2, 1, 5); // 初始相机位置
+            
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // 2. 初始化 Spark 渲染引擎
+            const spark = new SparkRenderer({ renderer });
+            scene.add(spark);
+
+            // 3. 加载 HF 上的模型
+            try {
+                const splat = new SplatMesh({ url: HF_MODEL_URL });
+                scene.add(splat);
+                
+                // 监听加载完成隐藏 Loading
+                // Spark 的加载是异步的，通常模型出现即代表成功
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 2000);
+
+            } catch (err) {
+                console.error("加载模型失败:", err);
+                document.getElementById('loading').innerText = "加载失败，请检查 HF 链接";
+            }
+
+            // 4. 渲染循环
+            function animate() {
+                requestAnimationFrame(animate);
+                // 简单的自动旋转预览（可选）
+                // scene.rotation.y += 0.005; 
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // 窗口缩放适配
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+
+        main();
     </script>
 </body>
 </html>
