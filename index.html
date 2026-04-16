@@ -3,162 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF-GS: Feed-Forward Gaussian Splatting on ScanNet++</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <title>FF-GS: Feed-Forward Gaussian Splatting Project Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background: #fafafa; }
-        .header { text-align: center; padding: 50px 0; }
-        h1 { font-family: 'Noto Serif SC', serif; font-size: 2.5em; margin-bottom: 10px; color: #1a1a1a; }
-        .authors { font-size: 1.2em; color: #555; }
-        .affiliation { font-style: italic; color: #888; margin-top: 5px; }
+        :root { --hit-blue: #00529b; --bg-gray: #f8f9fa; }
+        body { font-family: 'Roboto', sans-serif; margin: 0; background: var(--bg-gray); color: #333; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
         
-        /* 核心展示区 */
-        #viewer-container { 
-            position: relative; width: 100%; height: 600px; 
-            background: #000; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 40px 0;
-            touch-action: none; /* 防止移动端拖拽冲突 */
-        }
-        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
-        canvas:active { cursor: grabbing; }
-        .loading-overlay { 
-            position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); color: white; 
-            z-index: 10; text-align: center; pointer-events: none;
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-family: 'Noto Serif SC', serif; font-size: 2.5em; color: #1a1a1a; margin-bottom: 10px; }
+        .authors { font-size: 1.1em; color: #666; font-weight: 300; }
+        .affiliation { font-style: italic; color: var(--hit-blue); margin-top: 5px; font-weight: 500; }
+
+        /* 展示区布局 */
+        .viewer-layout { 
+            display: grid; grid-template-columns: 220px 1fr; gap: 20px;
+            background: #fff; padding: 15px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 30px 0;
         }
 
-        .section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #00529b; }
-        .abstract { font-style: italic; font-size: 1.1em; line-height: 1.8; }
-        .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.9em; }
+        /* 侧边栏按钮 */
+        .sidebar { display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #eee; padding-right: 15px; }
+        .sidebar-title { font-weight: 700; font-size: 0.85em; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .scene-btn {
+            padding: 12px 15px; border: none; border-radius: 8px; background: #f0f2f5;
+            cursor: pointer; text-align: left; transition: all 0.2s ease; font-weight: 500; font-size: 0.9em;
+        }
+        .scene-btn:hover { background: #e4e6e9; }
+        .scene-btn.active { background: var(--hit-blue); color: white; box-shadow: 0 4px 10px rgba(0,82,155,0.25); }
+
+        /* 渲染容器 */
+        #viewer-container { 
+            position: relative; width: 100%; height: 600px; 
+            background: #000; border-radius: 10px; overflow: hidden; 
+        }
+        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+        
+        /* 加载遮罩 */
+        .loading-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 100;
+            backdrop-filter: blur(8px); pointer-events: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .loading-overlay.visible { opacity: 1; pointer-events: all; }
+
+        .section { background: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; line-height: 1.8; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .section h2 { color: var(--hit-blue); margin-top: 0; border-left: 4px solid var(--hit-blue); padding-left: 15px; font-size: 1.5em; }
+
+        .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.85em; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Feed-Forward Gaussian Splatting (FF-GS)</h1>
+<div class="container">
+    <header>
+        <h1>FF-GS: Feed-Forward Gaussian Splatting</h1>
         <div class="authors">你的姓名 (Your Name)</div>
         <div class="affiliation">哈尔滨工业大学 · 电子信息</div>
-    </div>
+    </header>
 
     <div class="section">
-        <h2>摘要 (Abstract)</h2>
-        <p class="abstract">
-            本项目展示了基于 ScanNet++ 和 Replica 数据集的 FF-GS 算法成果。我们通过前馈网络实现了高效的 3D Gaussian Splatting 初始化，
-            在保证重建质量的同时，大幅提升了在大规模室内场景下的渲染速度和几何一致性。
-        </p>
+        <h2>Zero-shot Generalization on Replica</h2>
+        <p>本项目展示了 <strong>FF-GS</strong> 算法的跨数据集泛化能力。模型仅在 <strong>ScanNet++</strong> 真实场景数据集上进行预训练，并直接在 <strong>Replica</strong> 数据集上进行零样本（Zero-shot）推理。实验结果表明，FF-GS 能够通过单次前馈高效恢复高精度的室内场景几何结构与纹理细节。</p>
     </div>
 
-    <div id="viewer-container">
-        <div id="loading" class="loading-overlay">正在从 Hugging Face 加载 3D 场景...<br><small>首次加载较大，请耐心等待</small></div>
-    </div>
-
-    <div class="section">
-        <h2>算法对比 & 结果</h2>
-        <p>这里可以继续添加你的实验对比数据、表格或视频链接。</p>
+    <div class="viewer-layout">
+        <div class="sidebar">
+            <div class="sidebar-title">场景切换 (按需加载)</div>
+            <button class="scene-btn active" onclick="switchScene('office0', this)">Office Scene 0</button>
+            <button class="scene-btn" onclick="switchScene('office2', this)">Office Scene 2</button>
+            <button class="scene-btn" onclick="switchScene('office3', this)">Office Scene 3</button>
+            <button class="scene-btn" onclick="switchScene('room2', this)">Bedroom Scene 2</button>
+        </div>
+        
+        <div id="viewer-container">
+            <div id="loading" class="loading-overlay">
+                <div style="font-size: 1.2em; margin-bottom: 10px;">正在加载场景数据...</div>
+                <div style="font-size: 0.8em; color: #888;">正在建立从 Hugging Face 的连接</div>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
-        © 2026 Harbin Institute of Technology · 3D Vision Group
+        © 2026 Harbin Institute of Technology · FF-GS Project Page
     </div>
+</div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.179.0/build/three.module.js",
-            "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.179.0/examples/jsm/controls/OrbitControls.js",
-            "@sparkjsdev/spark": "https://unpkg.com/@sparkjsdev/spark@latest/dist/spark.module.js"
-        }
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.179.0/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.179.0/examples/jsm/controls/OrbitControls.js",
+        "@sparkjsdev/spark": "https://unpkg.com/@sparkjsdev/spark@latest/dist/spark.module.js"
     }
-    </script>
+}
+</script>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+<script type="module">
+    import * as THREE from 'three';
+    import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-        // --- 配置区 ---
-        const HF_MODEL_URL = 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud.spz';
-        // --------------
+    const scenes = {
+        'office0': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office0.spz',
+        'office2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office2.spz',
+        'office3': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_office3.spz',
+        'room2': 'https://huggingface.co/datasets/veng-valerie/FF-GS-Demo/resolve/main/point_cloud_room2.spz'
+    };
 
-        async function main() {
-            const container = document.getElementById('viewer-container');
-            
-            // 1. 初始化场景
-            const scene = new THREE.Scene();
-            
-            // 调大远裁剪面到 5000，防止大场景 ScanNet++ 被截断
-            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
-            
-            // 重要：ScanNet++/COLMAP 坐标系通常是 Z 轴向上
-            camera.up.set(0, 0, 1); 
-            // 初始相机位置：从侧上方俯瞰
-            camera.position.set(8, 8, 8); 
+    let renderer, scene, camera, controls, spark, currentSplat;
 
-            const renderer = new THREE.WebGLRenderer({ 
-                antialias: false, // 关闭抗锯齿，能省出大量显卡资源
-                alpha: true,
-                powerPreference: "high-performance" // 强制提醒浏览器使用独立显卡
-            });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(1); // 【最关键】强制分辨率为1倍，不使用高清缩放
-            container.appendChild(renderer.domElement);
+    async function init() {
+        const container = document.getElementById('viewer-container');
+        
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
+        camera.up.set(0, 0, 1); 
+        camera.position.set(7, 7, 7); 
 
-            // 2. 初始化 Spark 渲染引擎
-            const spark = new SparkRenderer({ renderer });
-            scene.add(spark);
+        renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(1); // 性能优化：强制 1 倍像素比
+        container.appendChild(renderer.domElement);
 
-            // 3. 添加轨道控制器（实现交互）
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true; // 增加滑动感
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = true; // 允许右键平移
+        spark = new SparkRenderer({ renderer });
+        scene.add(spark);
 
-            // 4. 加载模型
-            try {
-                // 如果模型加载出来还是反的，可以在 SplatMesh 创建后对其进行旋转
-                const splat = new SplatMesh({ 
-                    url: HF_MODEL_URL,
-                    sphericalHarmonicsDegree: 1 // 【关键】强制使用最简单的色彩计算，大幅提升渲染帧率
-                });
-                
-                // 如果是标准 COLMAP，有时需要绕 X 轴旋转 -90 度来适配 Three.js
-                // splat.rotation.x = -Math.PI / 2; 
-                
-                scene.add(splat);
-                
-                // 监听加载：Spark 暂无原生 Promise 回调，我们通过简单延时或状态检测来隐藏 loading
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    // 让控制器聚焦在模型中心（如果模型坐标已归一化）
-                    controls.target.set(0, 0, 0); 
-                }, 3500);
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
 
-            } catch (err) {
-                console.error("加载失败:", err);
-                document.getElementById('loading').innerText = "加载失败，请检查 HF 链接或 CORS";
-            }
+        // 初始只加载第一个，不预加载其他的
+        switchScene('office0', document.querySelector('.scene-btn.active'));
 
-            // 5. 渲染循环
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                // 必须在循环中更新 controls
-                controls.update(); 
-                
-                renderer.render(scene, camera);
-            }
-            animate();
+        animate();
+    }
 
-            // 响应式调整
-            window.addEventListener('resize', () => {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            });
+    // 核心切换逻辑：彻底清理内存再加载新的
+    window.switchScene = async (id, btn) => {
+        // 更新按钮样式
+        document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const loading = document.getElementById('loading');
+        loading.classList.add('visible');
+
+        // 1. 彻底移除当前场景中的模型并清理内存
+        if (currentSplat) {
+            scene.remove(currentSplat);
+            // 尝试释放 GPU 资源
+            if (currentSplat.dispose) currentSplat.dispose();
+            currentSplat = null;
         }
 
-        main().catch(console.error);
-    </script>
+        // 2. 延迟一下再加载，给浏览器喘息时间
+        setTimeout(async () => {
+            try {
+                currentSplat = new SplatMesh({ 
+                    url: scenes[id],
+                    sphericalHarmonicsDegree: 0 // 性能优化：降低球谐阶数
+                });
+                scene.add(currentSplat);
+                
+                // 3. 这里的延时是等 Spark 内部解析数据
+                setTimeout(() => {
+                    loading.classList.remove('visible');
+                    controls.target.set(0, 0, 0);
+                    // 视角归位，防止切场景后相机飞了
+                    camera.position.set(7, 7, 7); 
+                }, 2000);
+
+            } catch (e) {
+                console.error("加载失败:", e);
+                loading.innerText = "数据加载失败，请检查网络";
+            }
+        }, 300);
+    };
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('viewer-container');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    init();
+</script>
 </body>
 </html>
