@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF-GS: Feed-Forward Gaussian Splatting on ScanNet++</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background: #fafafa; }
+        .header { text-align: center; padding: 50px 0; }
+        h1 { font-family: 'Noto Serif SC', serif; font-size: 2.5em; margin-bottom: 10px; color: #1a1a1a; }
+        .authors { font-size: 1.2em; color: #555; }
+        .affiliation { font-style: italic; color: #888; margin-top: 5px; }
+        
+        /* 核心展示区：3D 渲染窗口 */
+        #viewer-container { 
+            position: relative; width: 100%; height: 600px; 
+            background: #000; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 40px 0;
+        }
+        .loading-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; }
+
+        .section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #00529b; } /* HIT Blue */
+        .abstract { font-style: italic; font-size: 1.1em; line-height: 1.8; }
+        .footer { text-align: center; padding: 40px; color: #aaa; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Feed-Forward Gaussian Splatting (FF-GS)</h1>
+        <div class="authors">作者姓名 (Your Name)</div>
+        <div class="affiliation">哈尔滨工业大学 · 电子信息</div>
+    </div>
+
+    <div class="section">
+        <h2>摘要 (Abstract)</h2>
+        <p class="abstract">
+            本项目展示了基于 ScanNet++ 和 Replica 数据集的 FF-GS 算法成果。我们通过前馈网络实现了高效的 3D Gaussian Splatting 初始化，
+            在保证重建质量的同时，大幅提升了在大规模室内场景下的渲染速度和几何一致性。
+        </p>
+    </div>
+
+    <div id="viewer-container">
+        <div id="loading" class="loading-overlay">正在加载 3D 场景...</div>
+    </div>
+
+    <div class="section">
+        <h2>算法对比 & 结果</h2>
+        <p>这里可以放一些你在 Replica 上训练得到的对比图片或者视频链接。</p>
+    </div>
+
+    <div class="footer">
+        © 2024 Harbin Institute of Technology · 3D Vision Group
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.3.4/dist/gaussian-splats-3d.module.js"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as GaussianSplats3D from 'gaussian-splats-3d';
+        
+        const viewer = new GaussianSplats3D.Viewer({
+            'targetElement': document.getElementById('viewer-container'),
+            'cameraUp': [0, -1, 0],
+            'initialCameraPosition': [-1, -2, 5],
+            'initialCameraLookAt': [0, 0, 0],
+            'sphericalHarmonicsDegree': 0 // 简历展示建议设为0，加载更快
+        });
+
+        // 【关键！】把这里的地址改成你模型文件的真实路径
+        viewer.addSplatScene('path/to/your/result.ksplat', {
+            'showLoadingUI': false
+        }).then(() => {
+            document.getElementById('loading').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
